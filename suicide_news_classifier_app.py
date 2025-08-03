@@ -130,29 +130,13 @@ def guideline(label):
 if "article_text" not in st.session_state:
     st.session_state.article_text = ""
 
-st.title("📰 자살 관련 기사 자동 등급 판별기")
+st.title("📰 자살 관련 기사 자동 등급 판별기 ")
 
-mode = st.radio("입력 방식 선택", ("뉴스 URL 입력", "기사 직접 입력"))
+st.session_state.article_text = st.text_area("기사 본문을 붙여넣으세요:")
 
-if mode == "뉴스 URL 입력":
-    news_url = st.text_input("뉴스 URL을 입력하세요:")
-
-    if st.button("URL로 기사 불러오기"):
-        if news_url.strip():
-            text = extract_news_text(news_url)
-            if len(text) < 50:
-                st.error("❌ 기사를 불러오지 못했습니다. (URL 확인)")
-            else:
-                st.session_state.article_text = text
-                st.success("기사 본문 불러오기 성공!")
-        else:
-            st.warning("URL을 입력하세요.")
-elif mode == "기사 직접 입력":
-    st.session_state.article_text = st.text_area("기사 본문을 입력하세요:")
-
-# 현재 기사 본문 표시
+# 현재 기사 본문 표시 (원하면 생략 가능)
 if st.session_state.article_text:
-    st.text_area("기사 본문", st.session_state.article_text, height=200)
+    st.text_area("기사 본문", st.session_state.article_text, height=200, disabled=True)
 
 # 등급 판별 버튼
 if st.button("등급 판별"):
@@ -161,7 +145,7 @@ if st.button("등급 판별"):
         st.subheader(f"등급: {label}")
         st.markdown(guideline(label))
     else:
-        st.warning("기사를 입력하거나 불러오세요.")
+        st.warning("기사를 입력하거나 붙여넣으세요.")
 
 
 
