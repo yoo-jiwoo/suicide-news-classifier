@@ -42,21 +42,19 @@ def extract_news_text(url, max_retry=3):
 
 # --------- 기사 등급 분류 ---------
 def classify_article(text):
-    werther_keywords = [
-        "극단적 선택", "목숨을 끊", "투신", "번개탄", "유서", "스스로 목숨",
-        "충격", "비극", "시신", "사망 원인", "마약 혐의", "유서 전문"
-    ]
-    papageno_keywords = [
-        "1393", "1388", "1577-0199", "129", "1588-9191", "도움 요청", "상담",
-        "정신건강", "위기 극복", "회복", "재활", "지원센터"
-    ]
+    txt = normalize(text)
 
-    risk_score = sum(word in text for word in werther_keywords)
-    safe_score = sum(word in text for word in papageno_keywords)
+    werther = ["극단적 선택", "목숨을 끊", "투신", "번개탄", "유서", "스스로 목숨",
+               "충격", "비극", "시신", "사망 원인", "마약 혐의", "유서 전문"]
+    papageno = ["1393", "1388", "15770199", "129", "15889191",
+                "도움 요청", "상담", "정신건강", "위기 극복", "회복", "재활", "지원센터"]
 
-    if risk_score >= 2 and safe_score == 0:
+    risk = sum(k in txt for k in werther)
+    safe = sum(k in txt for k in papageno)
+
+    if risk >= 2 and safe == 0:
         return "위험"
-    elif safe_score >= 2 and risk_score == 0:
+    elif safe >= 2 and risk == 0:
         return "권장"
     else:
         return "중립"
@@ -121,6 +119,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
