@@ -10,7 +10,7 @@ except Exception as e:
 import streamlit as st
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-# import subprocess
+import subprocess
 import os
 
 # -------------------- Playwright 설치 자동 실행 --------------------
@@ -77,6 +77,7 @@ def guideline(label):
 **→ 자살 보도 준칙 4.0에 따라 전면 수정 필요**"""
     elif label == "중립":
         return
+
 
 
 
