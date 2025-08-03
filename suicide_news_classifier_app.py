@@ -1,6 +1,8 @@
 
-subprocess.run(["playwright", "install", "chromium"], check=False)
-
+try:
+    subprocess.run(["playwright", "install", "chromium"], check=False)
+except Exception as e:
+    print(f"Playwright 설치 오류: {e}")
 
 
 import streamlit as st
@@ -73,6 +75,7 @@ def guideline(label):
 **→ 자살 보도 준칙 4.0에 따라 전면 수정 필요**"""
     elif label == "중립":
         return
+
 
 
 
