@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import asyncio
 import nest_asyncio
 import os, requests
+import re
 from bs4 import BeautifulSoup
 
 
@@ -41,6 +42,11 @@ def extract_news_text(url, max_retry=3):
             return f"❌ 본문 추출 실패: {e}"
 
 # --------- 기사 등급 분류 ---------
+def normalize(text):
+    # 숫자·한글·영문만 남기고 전부 제거 → 공백 하나로
+    cleaned = re.sub(r"[^0-9가-힣a-zA-Z]", " ", text)
+    return re.sub(r"\s+", " ", cleaned)
+    
 def classify_article(text):
     txt = normalize(text)
 
@@ -119,6 +125,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
