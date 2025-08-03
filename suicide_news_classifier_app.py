@@ -47,24 +47,40 @@ def normalize(text):
     cleaned = re.sub(r"[^0-9가-힣a-zA-Z]", " ", text)
     return re.sub(r"\s+", " ", cleaned)
     
+# ─── 새 함수 추가 ───
+HELP_PATTERNS = [
+    r"1393",
+    r"1388",
+    r"1577[-\s]?0199",
+    r"1588[-\s]?9191",
+    r"\b129\b"
+]
+def has_help_line(text: str) -> bool:
+    for pat in HELP_PATTERNS:
+        if re.search(pat, text):
+            return True
+    return False
+# ───────────────────
+
 def classify_article(text):
-    txt = normalize(text)
+    werther_keywords = [
+        "극단적 선택","목숨을 끊","투신","번개탄","유서","스스로 목숨",
+        "충격","비극","시신","사망 원인","마약 혐의","유서 전문"
+    ]
 
-    werther = ["극단적 선택", "목숨을 끊", "투신", "번개탄", "유서", "스스로 목숨",
-               "충격", "비극", "시신", "사망 원인", "마약 혐의", "유서 전문"]
-    papageno = ["1393", "1388", "15770199", "129", "15889191",
-                "도움 요청", "상담", "정신건강", "위기 극복", "회복", "재활", "지원센터"]
+    # 위험 키워드 점수
+    risk_score = sum(k in text for k in werther_keywords)
 
-    risk = sum(k in txt for k in werther)
-    safe = sum(k in txt for k in papageno)
+    # 도움 경로(전화·앱) 감지
+    safe_score = 1 if has_help_line(text) else 0
 
-    if risk >= 2 and safe == 0:
+    if risk_score >= 2 and safe_score == 0:
         return "위험"
-    elif safe >= 2 and risk == 0:
+    elif safe_score >= 1 and risk_score == 0:
         return "권장"
     else:
         return "중립"
-
+        
 # --------- 등급별 가이드라인 ---------
 def guideline(label):
     if label == "위험":
@@ -125,6 +141,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
