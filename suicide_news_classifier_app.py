@@ -16,23 +16,29 @@ except RuntimeError:
 nest_asyncio.apply()
 
 # --------- 뉴스 본문 추출 ---------
-def extract_news_text(url):
-    api_key = st.secrets["SCRAPINGANT_KEY"]   # ← secrets.toml 에서 읽어옴
+def extract_news_text(url, max_retry=3):
+    api_key = st.secrets["SCRAPINGANT_KEY"]
     api_url = (
         "https://api.scrapingant.com/v2/general?url="
         + requests.utils.quote(url)
         + f"&x-api-key={api_key}&browser=true&render_js=true"
     )
-    try:
-        resp = requests.get(api_url, timeout=30)
-        resp.raise_for_status()
-        html = resp.text
-        soup = BeautifulSoup(html, "html.parser")
-        paragraphs = soup.find_all("p")
-        text = "\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-        return text or "❌ 기사 본문을 찾지 못했습니다."
-    except Exception as e:
-        return f"❌ 뉴스 본문 추출 실패: {e}"
+    for attempt in range(1, max_retry + 1):
+        try:
+            resp = requests.get(api_url, timeout=60)   # ← 60초로 증가
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            paragraphs = soup.find_all("p")
+            text = "\n".join(
+                p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True)
+            )
+            return text or "❌ 기사 본문을 찾지 못했습니다."
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            if attempt == max_retry:
+                return "❌ 본문 추출 실패: ScrapingAnt 응답 지연"
+            time.sleep(2)  # 2초 후 재시도
+        except Exception as e:
+            return f"❌ 본문 추출 실패: {e}"
 
 # --------- 기사 등급 분류 ---------
 def classify_article(text):
@@ -115,6 +121,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
