@@ -83,7 +83,7 @@ def guideline(label):
 if "article_text" not in st.session_state:
     st.session_state.article_text = ""
 
-st.title("📰 자살 관련 기사 자동 등급 판별기 (requests_html + nest_asyncio 버전)")
+st.title("📰 자살 관련 기사 자동 등급 판별기")
 
 mode = st.radio("입력 방식 선택", ("뉴스 URL 입력", "기사 직접 입력"))
 
@@ -115,6 +115,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
