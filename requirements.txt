@@ -1,4 +1,4 @@
 streamlit
-requests-html
+requests-html==0.10.0   # ← 버전 고정
 beautifulsoup4
 nest_asyncio
