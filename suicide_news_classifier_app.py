@@ -95,11 +95,11 @@ def classify_article(text: str) -> str:
     safe_score = 1 if has_help_line(text) else 0
 
     # ④ 분류 규칙 (도움 번호 하나만 있어도 ‘권장’으로 인정)
-    if risk_score >= 2 and safe_score == 0:
-        return "위험"
-    elif safe_score >= 1 and risk_score == 0:
+    if safe_score >= 1:            # 도움 경로(핫라인)만 있으면 '권장'
         return "권장"
-    else:
+    elif risk_score >= 2:          # 위험 키워드 다수   +  도움 없음
+        return "위험"
+    else:                          # 그 밖은 중립
         return "중립"
 
 # --------- 등급별 가이드라인 ---------
@@ -162,6 +162,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
