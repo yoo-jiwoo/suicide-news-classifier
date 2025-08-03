@@ -3,6 +3,9 @@ from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 import asyncio
 import nest_asyncio
+import os, requests
+from bs4 import BeautifulSoup
+
 
 # --------- 이벤트 루프 준비 (requests_html .render() 에러 방지) ---------
 try:
@@ -14,24 +17,20 @@ nest_asyncio.apply()
 
 # --------- 뉴스 본문 추출 ---------
 def extract_news_text(url):
+    api_key = st.secrets["SCRAPINGANT_KEY"]   # ← secrets.toml 에서 읽어옴
+    api_url = (
+        "https://api.scrapingant.com/v2/general?url="
+        + requests.utils.quote(url)
+        + f"&x-api-key={api_key}&browser=true&render_js=true"
+    )
     try:
-        session = HTMLSession()
-        r = session.get(url)
-
-        # JS 렌더링 (0.10.0 이상에서 지원)
-        r.html.render(
-            timeout=20,
-            sleep=2,
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
-        html = r.html.html
+        resp = requests.get(api_url, timeout=30)
+        resp.raise_for_status()
+        html = resp.text
         soup = BeautifulSoup(html, "html.parser")
-        text = "\n".join(p.get_text(strip=True) for p in soup.find_all("p") if p.get_text(strip=True))
-        session.close()
-        return text
+        paragraphs = soup.find_all("p")
+        text = "\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+        return text or "❌ 기사 본문을 찾지 못했습니다."
     except Exception as e:
         return f"❌ 뉴스 본문 추출 실패: {e}"
 
@@ -116,5 +115,6 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
