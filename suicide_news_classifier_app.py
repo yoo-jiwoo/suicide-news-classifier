@@ -18,11 +18,10 @@ def extract_news_text(url):
         session = HTMLSession()
         r = session.get(url)
 
-        # JS 렌더링 --> signal 등록 끔
+        # JS 렌더링 (0.10.0 이상에서 지원)
         r.html.render(
             timeout=20,
             sleep=2,
-            # pyppeteer launch 옵션 전달
             handleSIGINT=False,
             handleSIGTERM=False,
             handleSIGHUP=False
@@ -30,8 +29,7 @@ def extract_news_text(url):
 
         html = r.html.html
         soup = BeautifulSoup(html, "html.parser")
-        paragraphs = soup.find_all("p")
-        text = "\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+        text = "\n".join(p.get_text(strip=True) for p in soup.find_all("p") if p.get_text(strip=True))
         session.close()
         return text
     except Exception as e:
@@ -118,4 +116,5 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
