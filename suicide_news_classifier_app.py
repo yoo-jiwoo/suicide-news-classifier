@@ -1,32 +1,20 @@
 import streamlit as st
-import subprocess
-from playwright.sync_api import sync_playwright
+from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 
-# -------------------- Playwright 브라우저 설치 함수 --------------------
-def install_playwright():
-    """버튼 클릭 시 Playwright Chromium 설치"""
-    with st.spinner("브라우저 설치 중... 잠시만 기다려주세요. (최대 1분)"):
-        try:
-            subprocess.run(["playwright", "install", "chromium"], check=False)
-            st.success("✅ 브라우저 설치 완료! 이제 뉴스 URL을 불러올 수 있습니다.")
-        except Exception as e:
-            st.error(f"❌ 설치 오류: {e}")
-
-# -------------------- 뉴스 본문 크롤링 --------------------
-def extract_news_text_playwright(url):
+# -------------------- 뉴스 본문 추출 --------------------
+def extract_news_text(url):
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, timeout=60000)
-            page.wait_for_timeout(3000)  # JS 로딩 대기
-            html = page.content()
-            browser.close()
-
+        session = HTMLSession()
+        r = session.get(url)
+        r.html.render(timeout=20, sleep=2)  # JS 렌더링
+        html = r.html.html
         soup = BeautifulSoup(html, "html.parser")
+
         paragraphs = soup.find_all("p")
         text = "\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+
+        session.close()
         return text
     except Exception as e:
         return f"❌ 뉴스 본문 추출 실패: {e}"
@@ -49,4 +37,60 @@ def classify_article(text):
         return "위험"
     elif safe_score >= 2 and risk_score == 0:
         return "권장"
-    els
+    else:
+        return "중립"
+
+def guideline(label):
+    if label == "위험":
+        return """⚠️ **위험(베르테르형)**  
+- 방법·도구·장소·유서 내용 언급  
+- 자극적·선정적 헤드라인  
+- 사건 원인 단순 귀속(개인 책임 프레임)  
+- 도움 경로(1393, 1388 등) 누락  
+**→ 자살 보도 준칙 4.0에 따라 전면 수정 필요**"""
+    elif label == "중립":
+        return """ℹ️ **중립**  
+- 보도 준칙 대체로 준수하나 회복 서사·예방 정보 부족  
+- 방법·장소·유서 비공개, 그러나 도움 경로 없음  
+- 구조적 원인·정책 대안 부족  
+**→ 도움 경로와 회복 서사 추가 필요**"""
+    elif label == "권장":
+        return """✅ **권장(파파게노형)**  
+- 방법·도구·장소·유서 내용 전면 비공개  
+- 중립적·사실적 표현 사용  
+- 회복 사례·구조적 원인 제시  
+- 도움 경로(1393, 1577-0199, 1388 등) 필수 삽입  
+**→ 예방 효과가 높은 모범 보도 사례**"""
+    return ""
+
+# -------------------- Streamlit UI --------------------
+if "article_text" not in st.session_state:
+    st.session_state.article_text = ""
+
+st.title("📰 자살 관련 기사 자동 등급 판별기 (requests_html 버전)")
+
+mode = st.radio("입력 방식 선택", ("뉴스 URL 입력", "기사 직접 입력"))
+
+if mode == "뉴스 URL 입력":
+    news_url = st.text_input("뉴스 URL을 입력하세요:")
+
+    if st.button("URL로 기사 불러오기"):
+        if news_url.strip():
+            text = extract_news_text(news_url)
+            if len(text) < 50:
+                st.error("❌ 기사를 불러오지 못했습니다. (URL 확인)")
+            else:
+                st.session_state.article_text = text
+                st.success("기사 본문 불러오기 성공!")
+        else:
+            st.warning("URL을 입력하세요.")
+
+elif mode == "기사 직접 입력":
+    st.session_state.article_text = st.text_area("기사 본문을 입력하세요:")
+
+# 현재 기사 본문 표시
+if st.session_state.article_text:
+    st.text_area("기사 본문", st.session_state.article_text, height=200)
+
+# 등급 판별 버튼
+if st.button("등급 판별"):
