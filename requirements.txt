@@ -1,4 +1,2 @@
-streamlit
-beautifulsoup4
+requests-html==0.10.0
 nest_asyncio
-requests
