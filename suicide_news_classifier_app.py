@@ -62,25 +62,46 @@ def has_help_line(text: str) -> bool:
     return False
 # ───────────────────
 
-def classify_article(text):
+import re
+
+# ───────────────────────── ① 도움 경로 정규식 ─────────────────────────
+HELP_PATTERNS = [
+    r"1393",
+    r"1388",
+    r"1577[-\s]?0199",
+    r"1588[-\s]?9191",
+    r"\b129\b",
+]
+
+def has_help_line(text: str) -> bool:
+    """1393·1388·1577-0199·1588-9191·129 등 ‘핫라인’ 표기 탐지"""
+    for pat in HELP_PATTERNS:
+        if re.search(pat, text):
+            return True
+    return False
+# ──────────────────────────────────────────────────────────────────────
+
+
+def classify_article(text: str) -> str:
     werther_keywords = [
-        "극단적 선택","목숨을 끊","투신","번개탄","유서","스스로 목숨",
-        "충격","비극","시신","사망 원인","마약 혐의","유서 전문"
+        "극단적 선택", "목숨을 끊", "투신", "번개탄", "유서", "스스로 목숨",
+        "충격", "비극", "시신", "사망 원인", "마약 혐의", "유서 전문"
     ]
 
-    # 위험 키워드 점수
+    # ② 위험 점수 : 키워드가 몇 개 들어 있는가
     risk_score = sum(k in text for k in werther_keywords)
 
-    # 도움 경로(전화·앱) 감지
+    # ③ 안전 점수 : 핫라인 하나라도 발견되면 1
     safe_score = 1 if has_help_line(text) else 0
 
+    # ④ 분류 규칙 (도움 번호 하나만 있어도 ‘권장’으로 인정)
     if risk_score >= 2 and safe_score == 0:
         return "위험"
     elif safe_score >= 1 and risk_score == 0:
         return "권장"
     else:
         return "중립"
-        
+
 # --------- 등급별 가이드라인 ---------
 def guideline(label):
     if label == "위험":
@@ -141,6 +162,7 @@ if st.button("등급 판별"):
         st.markdown(guideline(label))
     else:
         st.warning("기사를 입력하거나 불러오세요.")
+
 
 
 
