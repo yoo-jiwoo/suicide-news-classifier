@@ -1,7 +1,26 @@
 import streamlit as st
-from newspaper import Article
+from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
-# 기사 등급 분류 함수
+# -------------------- 기사 크롤링 --------------------
+def extract_news_text_playwright(url):
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=60000)  # 60초 타임아웃
+            page.wait_for_timeout(3000)    # JS 로딩 대기
+            html = page.content()
+            browser.close()
+
+        soup = BeautifulSoup(html, "html.parser")
+        paragraphs = soup.find_all("p")
+        text = "\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+        return text
+    except Exception as e:
+        return f"❌ 뉴스 본문 추출 실패: {e}"
+
+# -------------------- 등급 분류 --------------------
 def classify_article(text):
     werther_keywords = [
         "극단적 선택", "목숨을 끊", "투신", "번개탄", "유서", "스스로 목숨",
@@ -22,7 +41,6 @@ def classify_article(text):
     else:
         return "중립"
 
-# 등급별 가이드라인
 def guideline(label):
     if label == "위험":
         return """⚠️ **위험(베르테르형)**  
@@ -46,51 +64,39 @@ def guideline(label):
 **→ 예방 효과가 높은 모범 보도 사례**"""
     return ""
 
-# 뉴스 URL에서 기사 본문 추출
-def extract_news_text(url):
-    try:
-        article = Article(url, language='ko')
-        article.download()
-        article.parse()
-        return article.text
-    except Exception as e:
-        return f"❌ 뉴스 본문 추출 실패: {e}"
-
-# -------------------------
-# 세션 상태 초기화 (에러 방지)
-# -------------------------
+# -------------------- Streamlit 앱 --------------------
 if "article_text" not in st.session_state:
-    st.session_state["article_text"] = ""
+    st.session_state.article_text = ""
 
-# UI 시작
-st.title("📰 자살 관련 기사 자동 등급 판별기")
+st.title("📰 자살 관련 기사 자동 등급 판별기 (Playwright 버전)")
 
 mode = st.radio("입력 방식 선택", ("뉴스 URL 입력", "기사 직접 입력"))
 
 if mode == "뉴스 URL 입력":
     news_url = st.text_input("뉴스 URL을 입력하세요:")
+
     if st.button("URL로 기사 불러오기"):
         if news_url.strip():
-            text = extract_news_text(news_url)
-            if text.startswith("❌"):
-                st.error(text)
+            text = extract_news_text_playwright(news_url)
+            if len(text) < 50:
+                st.error("❌ 기사를 불러오지 못했습니다. (URL 확인)")
             else:
-                st.session_state["article_text"] = text
+                st.session_state.article_text = text
                 st.success("기사 본문 불러오기 성공!")
         else:
             st.warning("URL을 입력하세요.")
 
 elif mode == "기사 직접 입력":
-    st.session_state["article_text"] = st.text_area("기사 본문을 입력하세요:")
+    st.session_state.article_text = st.text_area("기사 본문을 입력하세요:")
 
 # 현재 기사 본문 표시
-if st.session_state["article_text"]:
-    st.text_area("기사 본문", st.session_state["article_text"], height=200)
+if st.session_state.article_text:
+    st.text_area("기사 본문", st.session_state.article_text, height=200)
 
 # 등급 판별 버튼
 if st.button("등급 판별"):
-    if st.session_state["article_text"].strip():
-        label = classify_article(st.session_state["article_text"])
+    if st.session_state.article_text.strip():
+        label = classify_article(st.session_state.article_text)
         st.subheader(f"등급: {label}")
         st.markdown(guideline(label))
     else:
