@@ -1,3 +1,4 @@
 streamlit
 requests-html
 beautifulsoup4
+nest_asyncio
