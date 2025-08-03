@@ -94,3 +94,10 @@ if st.session_state.article_text:
 
 # 등급 판별 버튼
 if st.button("등급 판별"):
+    if st.session_state.article_text.strip():
+        label = classify_article(st.session_state.article_text)
+        st.subheader(f"등급: {label}")
+        st.markdown(guideline(label))
+    else:
+        st.warning("기사를 입력하거나 불러오세요.")
+
