@@ -1,10 +1,5 @@
 
-import subprocess
 
-try:
-    subprocess.run(["playwright", "install", "chromium"], check=False)
-except Exception as e:
-    print(f"Playwright 설치 오류: {e}")
 
 
 import streamlit as st
@@ -12,6 +7,11 @@ import subprocess  # ← subprocess 모듈 임포트
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import os
+# Playwright 브라우저 자동 설치
+try:
+    subprocess.run(["playwright", "install", "chromium"], check=False)
+except Exception as e:
+    print(f"Playwright 설치 오류: {e}")
 
 # -------------------- Playwright 설치 자동 실행 --------------------
 def ensure_playwright_installed():
@@ -77,6 +77,7 @@ def guideline(label):
 **→ 자살 보도 준칙 4.0에 따라 전면 수정 필요**"""
     elif label == "중립":
         return
+
 
 
 
